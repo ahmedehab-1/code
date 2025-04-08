@@ -1,0 +1,122 @@
+import sys  # Importing the sys module, typically used for system-specific parameters and functions (not used explicitly in this code).
+
+# Global Declarations
+char_class = None  # Variable to store the current character class (e.g., letter, digit, unknown)
+lexeme = ""  # Variable to store the lexeme being built
+next_char = ""  # Variable to store the next character to be processed
+lex_len = 0  # Variable to store the length of the current lexeme
+token = None  # Placeholder for token (not used in this code)
+next_token = None  # Variable to store the next token to be processed
+in_fp = None  # File pointer to read the input file
+
+# Character Classes
+LETTER = 0  # Constant representing letter characters
+DIGIT = 1  # Constant representing digit characters
+UNKNOWN = 99  # Constant representing unknown characters
+
+# Token Codes
+INT_LIT = 10  # Token for integer literal
+IDENT = 11  # Token for identifiers
+ASSIGN_OP = 20  # Token for assignment operator (=)
+ADD_OP = 21  # Token for addition operator (+)
+SUB_OP = 22  # Token for subtraction operator (-)
+MULT_OP = 23  # Token for multiplication operator (*)
+DIV_OP = 24  # Token for division operator (/)
+LEFT_PAREN = 25  # Token for left parenthesis '('
+RIGHT_PAREN = 26  # Token for right parenthesis ')'
+EOF_TOKEN = -1  # Token for end of file
+
+# Function declarations
+
+def add_char():
+    global lexeme, lex_len  # Declare global variables that will be modified
+    if lex_len <= 98:  # If the length of the lexeme is less than or equal to 98
+        lexeme += next_char  # Add the current character to the lexeme
+        lex_len += 1  # Increment the length of the lexeme by 1
+    else:  
+        print("Error - lexeme is too long")  # If the lexeme is too long, print an error
+
+def get_char():
+    global next_char, char_class  # Declare global variables that will be modified
+    next_char = in_fp.read(1)  # Read one character from the file
+    if next_char:  # If a character was read
+        if next_char.isalpha():  # If the character is a letter
+            char_class = LETTER  # Set the character class to letter
+        elif next_char.isdigit():  # If the character is a digit
+            char_class = DIGIT  # Set the character class to digit
+        else:  # If the character is unknown
+            char_class = UNKNOWN  # Set the character class to unknown
+    else:  # If no character is found (end of file)
+        char_class = EOF_TOKEN  # Set the character class to end of file
+
+def get_non_blank():
+    while next_char.isspace():  # While the current character is a whitespace
+        get_char()  # Read the next character
+
+def lex():
+    global lex_len, next_token  # Declare global variables that will be modified
+    lex_len = 0  # Reset the lexeme length to 0
+    get_non_blank()  # Skip over any whitespace
+
+    if char_class == LETTER:  # If the character is a letter
+        add_char()  # Add the character to the lexeme
+        get_char()  # Read the next character
+        while char_class == LETTER or char_class == DIGIT:  # While the character is a letter or digit
+            add_char()  # Add the character to the lexeme
+            get_char()  # Read the next character
+        next_token = IDENT  # Set the next token to identifier
+
+    elif char_class == DIGIT:  # If the character is a digit
+        add_char()  # Add the character to the lexeme
+        get_char()  # Read the next character
+        while char_class == DIGIT:  # While the character is a digit
+            add_char()  # Add the character to the lexeme
+            get_char()  # Read the next character
+        next_token = INT_LIT  # Set the next token to integer literal
+
+    elif char_class == UNKNOWN:  # If the character is unknown
+        lookup(next_char)  # Call the lookup function to identify the character
+        get_char()  # Read the next character
+
+    elif char_class == EOF_TOKEN:  # If the character is the end of file
+        next_token = EOF_TOKEN  # Set the next token to end of file
+
+def lookup(ch):
+    global next_token  # Declare global variable that will be modified
+    if ch == '(':  # If the character is a left parenthesis
+        add_char()  # Add the character to the lexeme
+        next_token = LEFT_PAREN  # Set the next token to left parenthesis
+    elif ch == ')':  # If the character is a right parenthesis
+        add_char()  # Add the character to the lexeme
+        next_token = RIGHT_PAREN  # Set the next token to right parenthesis
+    elif ch == '+':  # If the character is a plus sign
+        add_char()  # Add the character to the lexeme
+        next_token = ADD_OP  # Set the next token to addition operator
+    elif ch == '-':  # If the character is a minus sign
+        add_char()  # Add the character to the lexeme
+        next_token = SUB_OP  # Set the next token to subtraction operator
+    elif ch == '*':  # If the character is an asterisk (multiplication)
+        add_char()  # Add the character to the lexeme
+        next_token = MULT_OP  # Set the next token to multiplication operator
+    elif ch == '/':  # If the character is a forward slash (division)
+        add_char()  # Add the character to the lexeme
+        next_token = DIV_OP  # Set the next token to division operator
+    elif ch == '=':  # If the character is an equal sign (assignment)
+        add_char()  # Add the character to the lexeme
+        next_token = ASSIGN_OP  # Set the next token to assignment operator
+    else:  # If the character is not recognized
+        if ch != '':  # If the character is not empty
+            add_char()  # Add the character to the lexeme
+        next_token = EOF_TOKEN  # Set the next token to end of file
+    return next_token  # Return the identified token
+
+# Main driver
+
+if __name__ == "__main__":  # If the script is being run directly
+    try:
+        with open("front.in", "r") as in_fp:  # Open the input file "front.in" for reading safely using 'with' statement
+            get_char()  # Read the first character from the file
+            while next_token != EOF_TOKEN:  # While the next token is not end of file
+                lex()  # Call the lex function to process the text
+    except FileNotFoundError:  # If the file is not found
+        print("ERROR - cannot open front.in")  # Print an error message
